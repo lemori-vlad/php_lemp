@@ -2,6 +2,9 @@
 
 ## DEV
 
+### Configure the project first (optional)
+cp .env.local.example .env
+
 ### Build and run containers
 docker compose up -d
 
