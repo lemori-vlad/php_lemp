@@ -22,7 +22,3 @@ RUN docker-php-ext-install mysqli pdo pdo_mysql  \
 # composer
 COPY --from=composer /usr/bin/composer /usr/bin/composer
 
-# Install laravel
-# Install composer
-
-
