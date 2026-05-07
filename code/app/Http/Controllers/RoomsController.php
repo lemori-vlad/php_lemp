@@ -3,9 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Room;
+use App\Models\RoomTimeSlot;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class RoomsController extends Controller
 {
@@ -52,5 +57,58 @@ class RoomsController extends Controller
             'room_id' => $roomId,
             'slots' => $query->get()
         ]);
+    }
+
+    public function reserveSlot(request $request, int $roomId): JsonResponse
+    {
+        try {
+            $room = Room::findOrFail($roomId);
+            $validated = Validator::make($request->all(), [
+                'timeslot_id' => 'required|integer',
+                // must be received from auth (jwt token etc.)
+                'reserved_by_id' => 'required|integer',
+            ])->validate();
+
+            $timeSlot = RoomTimeSlot::find($validated['timeslot_id']);
+
+            if (!$timeSlot) {
+                return response()->json([
+                    'message' => 'Requested time slot not found'
+                ], 404);
+            }
+
+            if ($timeSlot->is_reserved) {
+                return response()->json([
+                    'message' => 'This timeslot is already reserved'
+                ], 409);
+            }
+
+            // create the reservation
+            $timeSlot->is_reserved = true;
+            $timeSlot->reserved_by_id = $validated['reserved_by_id'];
+            $timeSlot->saveOrFail();
+
+            return response()->json([
+                'slot' => $timeSlot->refresh()
+            ]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                   'message' => 'Requested room not found'
+            ], 404);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => $e->validator->messages()->first()
+            ], 422);
+        } catch (Throwable $e) {
+            Log::error("Can't create a reservation", [
+                'exception' => $e->getMessage(),
+                // 'stacktrace' => $e->getTrace()
+            ]);
+
+            return response()->json([
+                'message' => 'Internal error'
+            ], 500);
+        }
+
     }
 }
