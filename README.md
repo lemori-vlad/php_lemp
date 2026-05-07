@@ -20,6 +20,11 @@ docker compose down
 
 docker compose down -v
 
+### Install composer dependencie (inside backend container)
+> Optional in case if the vendor doesn't exist/need install new dependencies
+
+composer install
+
 ### Run migrations and seed the database (optional)
 php artisan migrate --seed
 
