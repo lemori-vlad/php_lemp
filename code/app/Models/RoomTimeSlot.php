@@ -8,4 +8,11 @@ class RoomTimeSlot extends Model
 {
     public $timestamps = false;
     protected $fillable = ['room_id', 'start_time', 'end_time', 'is_reserved', 'reserved_by_id'];
+
+    protected function casts(): array
+    {
+        return [
+            'is_reserved' => 'boolean'
+        ];
+    }
 }
